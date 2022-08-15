@@ -1,4 +1,4 @@
-import { md5, sha1 } from 'hash-wasm';
+import { sha1 } from 'hash-wasm';
 import { nanoid } from 'nanoid';
 import { ShareTokenConfig, ValidateResponse } from './types';
 import { getDbInstance } from './utils/db';
@@ -6,10 +6,12 @@ import { getDbInstance } from './utils/db';
 export class ShareTokenFactory {
   private config: ShareTokenConfig;
   private db: ReturnType<typeof getDbInstance>;
+  private tokenSize: number;
   private cachedToken?: string;
 
   public constructor(config?: ShareTokenConfig) {
     this.config = config || {};
+    this.tokenSize = config?.tokenSize || 16;
     this.db = getDbInstance(config?.dbName);
   }
 
@@ -27,10 +29,10 @@ export class ShareTokenFactory {
     try {
       // use idb firstly
       const token = await this.db.get('__token');
-      if (typeof token === 'string') {
+      if (typeof token === 'string' && token.length === this.tokenSize) {
         return token;
       }
-      const newToken = nanoid();
+      const newToken = nanoid(this.tokenSize);
       await this.db.set('__token', newToken);
       window.localStorage.setItem(`__share_token__${localStorageKey}`, newToken);
       this.cachedToken = newToken;
@@ -39,11 +41,11 @@ export class ShareTokenFactory {
       // downgrade to localStorage
       console.error('Failed to retrieve token, using downgraded method.');
       const inLocalStorage = window.localStorage.getItem(localStorageKey);
-      if (typeof inLocalStorage === 'string' && inLocalStorage.length === 21) {
+      if (typeof inLocalStorage === 'string' && inLocalStorage.length === this.tokenSize) {
         return inLocalStorage;
       }
       // generate new and save to local storage
-      const newToken = nanoid();
+      const newToken = nanoid(this.tokenSize);
       window.localStorage.setItem(`__share_token__${localStorageKey}`, newToken);
       this.cachedToken = newToken;
       return newToken;
@@ -51,7 +53,7 @@ export class ShareTokenFactory {
   }
 
   public async validateToken(token: string) {
-    if (token.length !== 21) {
+    if (token.length !== this.tokenSize) {
       return false;
     }
     if (!this.config?.validateEndPoint) {

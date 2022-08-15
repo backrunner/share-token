@@ -1,6 +1,7 @@
 export interface ShareTokenConfig {
   dbName?: string;
   validateEndPoint?: string;
+  tokenSize?: number;
 }
 
 export interface ValidateResponse {
