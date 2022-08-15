@@ -1,6 +1,6 @@
 {
   "name": "share-token",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Use a random token to identify the sharing",
   "main": "dist/share-token.umd.js",
   "module": "dist/share-token.esm.js",
